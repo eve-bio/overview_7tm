@@ -1,0 +1,103 @@
+---
+title: "7TM Overview"
+format: html
+---
+
+# 7TM Receptor Screening Overview
+
+This report provides an overview of the current status of 7TM
+
+## Data Setup
+
+```{r message=FALSE, warning=FALSE}
+# Load required libraries and data sources
+library(ever)
+library(dplyr)
+library(DT)
+library(knitr)
+library(rmarkdown)
+
+# Get hit calling status data
+hcs <- pins::pin_read(get_board(), "emcvey/hit_calling_status")
+
+# Get all bundles information
+bundles_df <- get_bundles()
+```
+
+## Unreleased Hits Analysis
+
+The following table shows 7TM screening projects where hits have been successfully called but have not yet been released.
+
+```{r}
+# Join hit calling status with bundle information and filter for unreleased hits
+unreleased <- hcs |>
+  left_join(
+    bundles_df,
+    by = join_by(bundle_id, bundle_name, Mode, Target_Class)
+  ) |>
+  filter(
+    Target_Class == "7TM",
+    hit_calling_status == "Hits called",
+    is.na(data_release) | data_release_num == '7',
+  ) |>
+  arrange(project_group)
+
+datatable(unreleased, 
+          caption = "7TM Projects with Called Hits Awaiting Release Assignment",
+          options = list(pageLength = 10, scrollX = TRUE))
+```
+
+## Approved Protocols Awaiting Data
+
+This section identifies 7TM protocols that have been approved and published but currently have no screening data available.
+
+```{r}
+# Find approved 7TM protocols with no data available
+approved_no_data <- hcs |>
+  filter(Target_Class == "7TM", data_readiness == "No data available") |>
+  left_join(
+    bundles_df,
+    by = join_by(bundle_id, bundle_name, Mode, Target_Class)
+  ) |>
+  arrange(project_group)
+
+# Get list of approved/published protocols
+approved_protocols <- pins::pin_read(get_board(), 'mfearon/protocol_status') |>
+  filter(Target_Class == "7TM" & Status == "Published") |>
+  select(Target_Name, Assay_Mode)
+
+# Filter to only include approved protocols
+approved_no_data <- approved_no_data |>
+  inner_join(approved_protocols, join_by(Target_Name, Mode == Assay_Mode))
+
+datatable(approved_no_data, 
+          caption = "Approved 7TM Protocols Currently Lacking Screening Data",
+          options = list(pageLength = 10, scrollX = TRUE))
+```
+
+## Screens Ready for Hit Calling
+
+The table below shows 7TM primary screens that have been completed with all data available, but have not yet proceeded through the hit calling process. These represent the immediate pipeline of screens ready for analysis.
+
+```{r}
+# Find primary screens complete but not yet hit called
+psc <- hcs |>
+  filter(
+    Target_Class == "7TM",
+    data_readiness == "All data available",
+    hit_calling_status != "Hits called"
+  )
+
+datatable(psc, 
+          caption = "7TM Primary Screens Complete and Ready for Hit Calling",
+          options = list(pageLength = 10, scrollX = TRUE))
+```
+
+## Summary
+
+This overview provides insight into three key stages of the 7TM screening pipeline:
+
+1. **Unreleased Hits**: Projects with completed hit calling that need release assignment
+2. **Approved Protocols**: Published protocols awaiting screening data generation  
+3. **Ready for Hit Calling**: Completed screens awaiting hit calling
+

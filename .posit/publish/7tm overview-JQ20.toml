@@ -1,0 +1,13 @@
+product_type = 'connect'
+'$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
+type = 'html'
+entrypoint = 'overview_7tm.html'
+source = 'overview_7tm.qmd'
+validate = true
+files = [
+  '/overview_7tm.html',
+  '/.posit/publish/7tm overview-JQ20.toml',
+  '/.posit/publish/deployments/deployment-VLJA.toml',
+  '/overview_7tm_files'
+]
+title = '7tm overview'
