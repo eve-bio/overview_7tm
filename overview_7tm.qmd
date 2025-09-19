@@ -54,7 +54,7 @@ This section identifies 7TM protocols that have been approved and published but 
 ```{r}
 # Find approved 7TM protocols with no data available
 approved_no_data <- hcs |>
-  filter(Target_Class == "7TM", data_readiness == "No data available") |>
+  filter(Target_Class == "7TM", data_readiness != "All data available") |>
   left_join(
     bundles_df,
     by = join_by(bundle_id, bundle_name, Mode, Target_Class)
@@ -63,14 +63,15 @@ approved_no_data <- hcs |>
 
 # Get list of approved/published protocols
 approved_protocols <- pins::pin_read(get_board(), 'mfearon/protocol_status') |>
-  filter(Target_Class == "7TM" & Status == "Published") |>
-  select(Target_Name, Assay_Mode)
+  filter(Target_Class == "7TM" & Status == "Published")  |> filter(Target_Name != 'Viability' & Target_Name != 'Interference') |> 
+  mutate(Mode = if_else(Assay_Mode == 'Antagonist', 'ANT', 'AG')) |>
+  select(Target_Name, Mode)
 
 # Filter to only include approved protocols
-approved_no_data <- approved_no_data |>
-  inner_join(approved_protocols, join_by(Target_Name, Mode == Assay_Mode))
+approved_no_data_protocol <- approved_no_data |>
+  inner_join(approved_protocols , join_by(Target_Name, Mode))
 
-datatable(approved_no_data, 
+datatable(approved_no_data_protocol |> select(-bundle_name), 
           caption = "Approved 7TM Protocols Currently Lacking Screening Data",
           options = list(pageLength = 10, scrollX = TRUE))
 ```
