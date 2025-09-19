@@ -71,7 +71,7 @@ approved_protocols <- pins::pin_read(get_board(), 'mfearon/protocol_status') |>
 approved_no_data_protocol <- approved_no_data |>
   inner_join(approved_protocols , join_by(Target_Name, Mode))
 
-datatable(approved_no_data_protocol |> select(-bundle_name), 
+datatable(approved_no_data_protocol |> select(Mode:project_group,everything()), 
           caption = "Approved 7TM Protocols Currently Lacking Screening Data",
           options = list(pageLength = 10, scrollX = TRUE))
 ```
